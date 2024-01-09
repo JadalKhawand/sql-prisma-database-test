@@ -27,6 +27,12 @@ app.use(express.json());
 app.get("/ready", (req, res) => {
   res.status(200).send("OK");
 });
+
+app.post("/users/create", (req, res) => {
+  const { name, email } = req.body;
+  res.status(200).send("Recieved");
+  console.log(name , email);
+});
 // session final-3
 // Task: setup prisma schema allowing for:
 // - creating posts

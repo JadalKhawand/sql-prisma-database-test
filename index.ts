@@ -1,4 +1,5 @@
 import express, { Express, Request, Response } from "express";
+import { Prisma, PrismaClient } from "@prisma/client";
 import dotenv from "dotenv";
 import cors from "cors";
 dotenv.config();
@@ -11,6 +12,7 @@ if (!PORT) {
 }
 
 const app: Express = express();
+const prisma = new PrismaClient();
 
 // session final-3
 // Task: add cors() middleware
@@ -22,31 +24,69 @@ app.use(express.json());
 // Task: add express.json() middleware
 app.use(express.json());
 
-// session final-3
-// Task: add a GET endpoint at path "/ready" just to test the server and confirm it is working
 app.get("/ready", (req, res) => {
   res.status(200).send("OK");
 });
 
-app.post("/users/create", (req, res) => {
+app.post("/users/create", async (req, res) => {
   const { name, email } = req.body;
-  res.status(200).send("Recieved");
-  console.log(name , email);
+  const user = await prisma.user.create({
+    data: {
+      name: name,
+      email: email,
+    },
+  });
+  console.log(user);
+  res.status(200).json(user);
 });
-// session final-3
-// Task: setup prisma schema allowing for:
-// - creating posts
-// - searching posts
-// Hint: find the documentation and follow the steps outlined for setting up prisma
-// Hint: you will also need a MySQL database
 
-// session final-3
-// Task: add a simple POST endpoint to create posts
+app.post("/posts/create", async (req, res) => {
+  const { title, content, published, authorId } = req.body;
+  const post = await prisma.post.create({
+    data: {
+      title: title,
+      content: content,
+      published: published,
+      authorId: authorId,
+    },
+  });
+  res.json(post);
+});
 
-// session final-3
-// Task: add a simple GET endpoint to search posts
+app.get("/user/:user_id", async (req, res) => {
+  const user_id = parseInt(req.params.user_id);
+  const user = await prisma.user.findUnique({
+    where: {
+      id: user_id, // where column row id = id
+    },
+    include: {
+      posts: true,
+    },
+  });
+  res.json(user);
+});
 
-// start server
+app.get("/posts/published", async (req, res) => {
+  const posts = await prisma.post.findMany({
+    where: { published: true },
+  });
+  res.json(posts);
+});
+
+app.put("/users/:id", async (req, res) => {
+  const user_id = parseInt(req.params.id);
+  const name = req.body.name;
+  const updateUser = await prisma.user.update({
+    where: {
+      id: user_id,
+    },
+    data: {
+      name: name,
+    },
+  });
+  res.json(updateUser);
+});
+
 app.listen(process.env.PORT, () => {
   console.log(
     `🚀🚀🚀 Server is running at https://localhost:${process.env.PORT}`
